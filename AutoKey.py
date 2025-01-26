@@ -28,7 +28,6 @@ def on_quit(icon, item):
 
 def on_setup(icon, item):
     root.after(0, root.deiconify)
-    root.protocol("WM_DELETE_WINDOW", lambda: on_quit(icon, item))
 
 def setup_tray():
     icon = pystray.Icon("auto_key_icon")
@@ -56,16 +55,25 @@ def start_script():
     ]
 
     def auto_type_text(text):
-        kb.write(text)
-        time.sleep(0.1)
+        if not hasattr(auto_type_text, "last_time"):
+            auto_type_text.last_time = 0
+
+        current_time = time.time()
+        if current_time - auto_type_text.last_time > 0.5:
+            auto_type_text.last_time = current_time
+            print(f"Write text: {text}")
+            kb.write(text)
+            time.sleep(0.1)
 
     # Unhook existing hotkeys
     for hotkey in registered_hotkeys:
+        print(f"Unhook hotkey {hotkey}")
         hotkey.stop()
     registered_hotkeys.clear()
 
     # Register new hotkeys
     for hotkey, text in hotkeys:
+        print(f"Registering hotkey {hotkey} with text: {text}")
         if text:  # Only register if text is not empty
             listener = keyboard.GlobalHotKeys({
                 hotkey: lambda t=text: auto_type_text(t)
